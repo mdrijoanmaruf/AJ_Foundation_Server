@@ -24,13 +24,14 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
+    // Create user (role defaults to 'user' from schema)
     const user = new User({
       name,
       email,
       password: hashedPassword,
       image: image || null,
       provider: 'local',
+      role: 'user',
     });
 
     await user.save();
@@ -50,6 +51,7 @@ exports.register = async (req, res) => {
         name: user.name,
         email: user.email,
         image: user.image,
+        role: user.role || 'user',
       },
     });
   } catch (error) {
@@ -69,8 +71,8 @@ exports.login = async (req, res) => {
 
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email });
+    // Find user (include password for verification)
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -88,9 +90,9 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Generate JWT
+    // Generate JWT (include role if present)
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
@@ -103,6 +105,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         image: user.image,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -142,8 +145,10 @@ exports.googleAuth = async (req, res) => {
         await user.save();
       }
 
+      // do not modify role on existing users; role is only set at registration
+
       const token = jwt.sign(
-        { userId: user._id, email: user.email },
+        { userId: user._id, email: user.email, role: user.role },
         process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '7d' }
       );
@@ -167,6 +172,7 @@ exports.googleAuth = async (req, res) => {
       image,
       googleId,
       provider: 'google',
+      role: 'user',
     });
 
     await user.save();
