@@ -6,6 +6,7 @@ const cors = require('cors');
 // Import routes
 const userRoutes = require('./src/routes/userRoutes');
 const authRoutes = require('./src/routes/authRoutes');
+const messageRoutes = require('./src/routes/messageRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +32,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
