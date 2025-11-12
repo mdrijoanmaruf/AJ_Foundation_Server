@@ -7,14 +7,15 @@ const cors = require('cors');
 const userRoutes = require('./src/routes/userRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const messageRoutes = require('./src/routes/messageRoutes');
+const galleryRoutes = require('./src/routes/galleryRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Database connection
 mongoose
@@ -33,6 +34,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/gallery', galleryRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
