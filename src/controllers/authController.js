@@ -161,6 +161,7 @@ exports.googleAuth = async (req, res) => {
           name: user.name,
           email: user.email,
           image: user.image,
+          role: user.role,
         },
       });
     }
@@ -178,7 +179,7 @@ exports.googleAuth = async (req, res) => {
     await user.save();
 
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
@@ -191,6 +192,7 @@ exports.googleAuth = async (req, res) => {
         name: user.name,
         email: user.email,
         image: user.image,
+        role: user.role,
       },
     });
   } catch (error) {
