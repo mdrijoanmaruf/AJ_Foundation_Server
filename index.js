@@ -9,6 +9,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const messageRoutes = require('./src/routes/messageRoutes');
 const galleryRoutes = require('./src/routes/galleryRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
+const teamRoutes = require('./src/routes/teamRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/team', teamRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
