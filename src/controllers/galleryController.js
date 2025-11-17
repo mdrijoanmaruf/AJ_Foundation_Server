@@ -1,5 +1,7 @@
 const GalleryTopic = require('../models/GalleryTopic');
 const GalleryImage = require('../models/GalleryImage');
+const VideoTopic = require('../models/VideoTopic');
+const GalleryVideo = require('../models/GalleryVideo');
 const FormData = require('form-data');
 const fetch = require('node-fetch');
 
@@ -237,6 +239,193 @@ const deleteImage = async (req, res) => {
   }
 };
 
+// ============= VIDEO CONTROLLERS =============
+
+// @desc    Create video topic
+// @route   POST /api/gallery/video-topics
+// @access  Private/Admin
+const createVideoTopic = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Video topic name is required' });
+    }
+
+    const videoTopic = new VideoTopic({
+      name,
+      description,
+    });
+
+    await videoTopic.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Video topic created successfully',
+      data: videoTopic,
+    });
+  } catch (error) {
+    console.error('Create video topic error:', error);
+    res.status(500).json({ message: 'Server error while creating video topic' });
+  }
+};
+
+// @desc    Get all video topics
+// @route   GET /api/gallery/video-topics
+// @access  Public
+const getVideoTopics = async (req, res) => {
+  try {
+    const videoTopics = await VideoTopic.find({}).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: videoTopics.length,
+      data: videoTopics,
+    });
+  } catch (error) {
+    console.error('Get video topics error:', error);
+    res.status(500).json({ message: 'Server error while fetching video topics' });
+  }
+};
+
+// @desc    Delete video topic
+// @route   DELETE /api/gallery/video-topics/:id
+// @access  Private/Admin
+const deleteVideoTopic = async (req, res) => {
+  try {
+    const videoTopic = await VideoTopic.findById(req.params.id);
+
+    if (!videoTopic) {
+      return res.status(404).json({ message: 'Video topic not found' });
+    }
+
+    // Delete all videos in this topic
+    await GalleryVideo.deleteMany({ topic: req.params.id });
+
+    await videoTopic.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Video topic and all videos deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete video topic error:', error);
+    res.status(500).json({ message: 'Server error while deleting video topic' });
+  }
+};
+
+// @desc    Upload video (YouTube URL)
+// @route   POST /api/gallery/upload-video
+// @access  Private/Admin
+const uploadVideo = async (req, res) => {
+  try {
+    const { topicId, title, videoUrl } = req.body;
+
+    if (!topicId || !title || !videoUrl) {
+      return res.status(400).json({ message: 'Topic, title, and video URL are required' });
+    }
+
+    // Verify topic exists
+    const topic = await VideoTopic.findById(topicId);
+    if (!topic) {
+      return res.status(404).json({ message: 'Video topic not found' });
+    }
+
+    // Validate YouTube URL
+    const youtubeRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = videoUrl.match(youtubeRegex);
+    if (!match || match[2].length !== 11) {
+      return res.status(400).json({ message: 'Invalid YouTube URL' });
+    }
+
+    // Save to database
+    const galleryVideo = new GalleryVideo({
+      topic: topicId,
+      title,
+      videoUrl,
+      uploadedBy: req.user._id,
+    });
+
+    await galleryVideo.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Video uploaded successfully',
+      data: galleryVideo,
+    });
+  } catch (error) {
+    console.error('Upload video error:', error);
+    res.status(500).json({ 
+      message: error.message || 'Server error while uploading video',
+      error: error.toString()
+    });
+  }
+};
+
+// @desc    Get videos by topic
+// @route   GET /api/gallery/videos/:topicId
+// @access  Public
+const getVideosByTopic = async (req, res) => {
+  try {
+    const videos = await GalleryVideo.find({ topic: req.params.topicId })
+      .sort({ createdAt: -1 })
+      .populate('uploadedBy', 'name');
+
+    res.status(200).json({
+      success: true,
+      count: videos.length,
+      data: videos,
+    });
+  } catch (error) {
+    console.error('Get videos error:', error);
+    res.status(500).json({ message: 'Server error while fetching videos' });
+  }
+};
+
+// @desc    Get all videos
+// @route   GET /api/gallery/videos
+// @access  Public
+const getAllVideos = async (req, res) => {
+  try {
+    const videos = await GalleryVideo.find({})
+      .sort({ createdAt: -1 })
+      .populate('topic', 'name')
+      .populate('uploadedBy', 'name');
+
+    res.status(200).json({
+      success: true,
+      count: videos.length,
+      data: videos,
+    });
+  } catch (error) {
+    console.error('Get all videos error:', error);
+    res.status(500).json({ message: 'Server error while fetching videos' });
+  }
+};
+
+// @desc    Delete video
+// @route   DELETE /api/gallery/videos/:id
+// @access  Private/Admin
+const deleteVideo = async (req, res) => {
+  try {
+    const video = await GalleryVideo.findById(req.params.id);
+
+    if (!video) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
+
+    await video.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Video deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete video error:', error);
+    res.status(500).json({ message: 'Server error while deleting video' });
+  }
+};
+
 module.exports = {
   createTopic,
   getTopics,
@@ -246,4 +435,12 @@ module.exports = {
   getImagesByTopic,
   getAllImages,
   deleteImage,
+  // Video controllers
+  createVideoTopic,
+  getVideoTopics,
+  deleteVideoTopic,
+  uploadVideo,
+  getVideosByTopic,
+  getAllVideos,
+  deleteVideo,
 };

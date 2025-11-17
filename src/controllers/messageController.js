@@ -99,9 +99,63 @@ const deleteMessage = async (req, res) => {
   }
 };
 
+// @desc    Delete all messages
+// @route   DELETE /api/messages
+// @access  Private/Admin
+const deleteAllMessages = async (req, res) => {
+  try {
+    await Message.deleteMany({});
+
+    res.status(200).json({
+      success: true,
+      message: 'All messages deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete all messages error:', error);
+    res.status(500).json({ message: 'Server error while deleting messages' });
+  }
+};
+
+// @desc    Delete all read messages
+// @route   DELETE /api/messages/read
+// @access  Private/Admin
+const deleteReadMessages = async (req, res) => {
+  try {
+    await Message.deleteMany({ isRead: true });
+
+    res.status(200).json({
+      success: true,
+      message: 'All read messages deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete read messages error:', error);
+    res.status(500).json({ message: 'Server error while deleting read messages' });
+  }
+};
+
+// @desc    Delete all unread messages
+// @route   DELETE /api/messages/unread
+// @access  Private/Admin
+const deleteUnreadMessages = async (req, res) => {
+  try {
+    await Message.deleteMany({ isRead: { $ne: true } });
+
+    res.status(200).json({
+      success: true,
+      message: 'All unread messages deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete unread messages error:', error);
+    res.status(500).json({ message: 'Server error while deleting unread messages' });
+  }
+};
+
 module.exports = {
   createMessage,
   getMessages,
   markAsRead,
   deleteMessage,
+  deleteAllMessages,
+  deleteReadMessages,
+  deleteUnreadMessages,
 };
